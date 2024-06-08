@@ -82,13 +82,19 @@ class App:
 
     def recognize(self):
         if self.template_path and self.screen_image is not None:
-            template = cv2.imread(self.template_path)
-            loc, val = image_recognition.match_template(self.screen_image, template)
-            if val > self.sensitivity.get():  # Use the user-defined sensitivity
-                self.canvas.create_rectangle(loc[0], loc[1], loc[0]+template.shape[1], loc[1]+template.shape[0], outline='red')
-                self.draw_rectangle_on_image(loc, template.shape[1], template.shape[0])
-                self.status.set(f'Template recognized at {loc} with confidence {val}')
-                logging.info(f'Template recognized at {loc} with confidence {val}')
+            template = cv2.imread(self.template_path, 0)
+            screen_gray = cv2.cvtColor(self.screen_image, cv2.COLOR_BGR2GRAY)
+            res = cv2.matchTemplate(screen_gray, template, cv2.TM_CCOEFF_NORMED)
+            threshold = self.sensitivity.get()
+            loc = np.where(res >= threshold)
+
+            # Marcar todas as ocorrências
+            for pt in zip(*loc[::-1]):
+                self.canvas.create_rectangle(pt[0], pt[1], pt[0] + template.shape[1], pt[1] + template.shape[0], outline='red')
+                self.draw_rectangle_on_image(pt, template.shape[1], template.shape[0])
+
+            self.status.set(f'Template recognized in multiple locations')
+            logging.info(f'Template recognized in multiple locations')
 
     def draw_rectangle_on_image(self, loc, width, height):
         # Desenha o retângulo na imagem PIL
