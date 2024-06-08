@@ -1,6 +1,5 @@
-
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, ttk
 from PIL import ImageTk, Image, ImageDraw
 import cv2
 import numpy as np
@@ -16,9 +15,10 @@ class App:
         self.root.title("Image Recognition Tester")
         self.template_path = None
         self.screen_image = None
+        self.sensitivity = tk.DoubleVar(value=0.8)  # Sensibilidade padrão
 
         # Configurando o logger
-        logging.basicConfig(filename='app.log', level=logging.INFO, 
+        logging.basicConfig(filename='app.log', level=logging.INFO,
                             format='%(asctime)s - %(levelname)s - %(message)s')
 
         # Adicionando a barra de menu
@@ -38,6 +38,24 @@ class App:
         self.menu.add_cascade(label="Help", menu=help_menu)
         help_menu.add_command(label="About", command=self.show_about)
 
+        settings_menu = tk.Menu(self.menu, tearoff=0)
+        self.menu.add_cascade(label="Settings", menu=settings_menu)
+        settings_menu.add_command(label="Set Sensitivity", command=self.set_sensitivity)
+
+        # Adicionando uma barra de ferramentas
+        toolbar = tk.Frame(root, bd=1, relief=tk.RAISED)
+        open_button = tk.Button(toolbar, text="Open Template", command=self.load_template)
+        open_button.pack(side=tk.LEFT, padx=2, pady=2)
+        save_button = tk.Button(toolbar, text="Save Results", command=self.save_results)
+        save_button.pack(side=tk.LEFT, padx=2, pady=2)
+        toolbar.pack(side=tk.TOP, fill=tk.X)
+
+        # Adicionando uma barra de status
+        self.status = tk.StringVar()
+        self.status.set("Ready")
+        status_bar = tk.Label(root, textvariable=self.status, bd=1, relief=tk.SUNKEN, anchor=tk.W)
+        status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
         self.canvas = tk.Canvas(root, width=800, height=600)
         self.canvas.pack()
 
@@ -48,6 +66,7 @@ class App:
             template_image = image_manager.load_image(self.template_path)
             self.template_image = ImageTk.PhotoImage(template_image)
             self.canvas.create_image(0, 0, anchor=tk.NW, image=self.template_image)
+            self.status.set(f"Template loaded: {self.template_path}")
             logging.info(f"Template loaded: {self.template_path}")
 
     def capture_screen(self):
@@ -74,15 +93,17 @@ class App:
         self.screen_image_tk = ImageTk.PhotoImage(screen_image_pil)
         self.canvas.create_image(0, 0, anchor=tk.NW, image=self.screen_image_tk)
 
+        self.status.set("Screen captured")
         logging.info("Screen captured")
 
     def recognize(self):
         if self.template_path and self.screen_image is not None:
             template = cv2.imread(self.template_path)
             loc, val = image_recognition.match_template(self.screen_image, template)
-            if val > 0.8:  # Threshold for recognition
+            if val > self.sensitivity.get():  # Use the user-defined sensitivity
                 self.canvas.create_rectangle(loc[0], loc[1], loc[0]+template.shape[1], loc[1]+template.shape[0], outline='red')
                 self.draw_rectangle_on_image(loc, template.shape[1], template.shape[0])
+                self.status.set(f"Template recognized at {loc} with confidence {val}")
                 logging.info(f"Template recognized at {loc} with confidence {val}")
 
     def draw_rectangle_on_image(self, loc, width, height):
@@ -97,9 +118,21 @@ class App:
             save_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png")])
             if save_path:
                 self.screen_image_with_rect.save(save_path)
+                self.status.set(f"Results saved to {save_path}")
                 logging.info(f"Results saved to {save_path}")
                 messagebox.showinfo("Save Results", f"Imagem salva em: {save_path}")
 
+    def set_sensitivity(self):
+        sensitivity_window = tk.Toplevel(self.root)
+        sensitivity_window.title("Set Sensitivity")
+
+        tk.Label(sensitivity_window, text="Sensitivity:").pack(side=tk.LEFT)
+        sensitivity_scale = tk.Scale(sensitivity_window, variable=self.sensitivity, from_=0.0, to=1.0, resolution=0.01, orient=tk.HORIZONTAL)
+        sensitivity_scale.pack(side=tk.LEFT)
+
+        tk.Button(sensitivity_window, text="OK", command=sensitivity_window.destroy).pack(side=tk.LEFT)
+
     def show_about(self):
         messagebox.showinfo("About", "Image Recognition Tester\nVersion 1.0")
+        self.status.set("Showing About dialog")
         logging.info("About dialog shown")
