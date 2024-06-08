@@ -36,8 +36,12 @@ class App:
         self.status.set('Ready')
         configure_status_bar(self)
 
-        self.canvas = tk.Canvas(root, width=800, height=600)
-        self.canvas.pack()
+        # Ajustando o layout
+        self.main_frame = tk.Frame(root, padx=10, pady=10)
+        self.main_frame.pack(fill=tk.BOTH, expand=True)
+
+        self.canvas = tk.Canvas(self.main_frame, width=800, height=600, bg='white')
+        self.canvas.pack(fill=tk.BOTH, expand=True)
 
     def load_template(self):
         initial_dir = r'C:\\Users\\felip\\Pictures\\Screenshots'
