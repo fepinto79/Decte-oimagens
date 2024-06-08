@@ -1,14 +1,15 @@
-import tkinter as tk
-from .menu.configure_menu import configure_menu
-from .toolbar.configure_toolbar import configure_toolbar
-from .status_bar.configure_status_bar import configure_status_bar
+Ôªøimport tkinter as tk
+from tkinter import filedialog, messagebox
+from src.menu.configure_menu import configure_menu
+from src.toolbar.configure_toolbar import configure_toolbar
+from src.status_bar.configure_status_bar import configure_status_bar
 from PIL import ImageTk, Image, ImageDraw
 import cv2
 import numpy as np
 import pyautogui
 import pygetwindow as gw
-import image_manager
-import image_recognition
+import src.image_manager as image_manager
+import src.image_recognition as image_recognition
 import logging
 
 class App:
@@ -17,7 +18,7 @@ class App:
         self.root.title('Image Recognition Tester')
         self.template_path = None
         self.screen_image = None
-        self.sensitivity = tk.DoubleVar(value=0.8)  # Sensibilidade padr„o
+        self.sensitivity = tk.DoubleVar(value=0.8)  # Sensibilidade padr√£o
 
         # Configurando o logger
         logging.basicConfig(filename='app.log', level=logging.INFO, 
@@ -86,7 +87,7 @@ class App:
                 logging.info(f'Template recognized at {loc} with confidence {val}')
 
     def draw_rectangle_on_image(self, loc, width, height):
-        # Desenha o ret‚ngulo na imagem PIL
+        # Desenha o ret√¢ngulo na imagem PIL
         screen_image_pil = Image.fromarray(cv2.cvtColor(self.screen_image, cv2.COLOR_BGR2RGB))
         draw = ImageDraw.Draw(screen_image_pil)
         draw.rectangle([loc[0], loc[1], loc[0] + width, loc[1] + height], outline='red')
